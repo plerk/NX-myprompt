@@ -63,6 +63,7 @@ sub generate_rc
   my $config = Shell::Config::Generate->new;
   
   generate_rc_ls($config);
+  generate_rc_grep($config);
   
   $config->set_alias( rm => 'rm -i' );
   $config->set_alias( mv => 'mv -i' );
@@ -122,7 +123,7 @@ sub generate_rc_ls
 {
   my($config) = @_;
 
-  my($out, $err) = capture {
+  my($out, undef) = capture {
     system 'ls', '--version';
   };
   if($out =~ /GNU/)
@@ -137,11 +138,31 @@ sub generate_rc_ls
   $config->set_alias( dir => 'ls -l' );
 }
 
+sub generate_rc_grep
+{
+  my($config) = @_;
+  
+  foreach my $cmd (qw( grep egrep rgrep ))
+  {
+    my($out, undef) = capture {
+      system $cmd, '--version';
+    };
+    if($out =~ /GNU/)
+    {
+      $config->set_alias( $cmd => "$cmd --color=auto" );
+    }
+    elsif(which "g$cmd")
+    {
+      $config->set_alias( $cmd => "g$cmd --color=auto" );
+    }
+  }
+}
+
 sub generate_rc_df
 {
   my($config) = @_;
   
-  my($out, $err) = capture {
+  my($out, undef) = capture {
     system 'df', '--version';
   };
   if($out =~ /GNU/)
