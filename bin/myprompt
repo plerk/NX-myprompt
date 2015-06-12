@@ -12,6 +12,7 @@ use NX::myprompt;
 =head1 SYNOPSIS
 
  % myprompt --cshrc
+ % myprompt --shrc
  % myprompt
 
 =head1 OPTIONS
@@ -19,6 +20,10 @@ use NX::myprompt;
 =head2 --cshrc
 
 Print out the appropriate .cshrc configurations.
+
+=head2 --shrc
+
+Print out the appropriate .shrc configurations.
 
 =head2 --help
 

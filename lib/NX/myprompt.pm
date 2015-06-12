@@ -33,7 +33,8 @@ sub main
   my $version;
   
   GetOptions(
-    'cshrc'     => sub { $shell = Shell::Guess->c_shell },
+    'cshrc'     => sub { $shell = Shell::Guess->c_shell      },
+    'shrc'      => sub { $shell = Shell::Guess->bourne_shell },
     'help|h'    => \$help,
     'version|v' => \$version,
   );
@@ -80,6 +81,11 @@ sub generate_rc
     $config->set_alias( ldd => 'otool -L' );
   }
 
+  if((!! which 'ppkg-config') && (! which 'pkg-config'))
+  {
+    $config->set_alias( 'pkg-config' => 'ppkgconfig' );
+  }
+
   generate_rc_df($config);  
   generate_rc_ed($config);
   generate_rc_locale($config);
@@ -90,10 +96,6 @@ sub generate_rc
     $config->set( PAGER => 'less' );
   }
 
-  # todo: grep --color=auto
-  # todo: egrep --color=auto  
-  # todo: ppkg-config if no pkg-config
-  
   print $config->generate( $shell );
   
   if($shell->is_c)
