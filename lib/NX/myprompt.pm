@@ -9,6 +9,11 @@ use File::Which qw( which );
 use Capture::Tiny qw( capture );
 use Shell::Guess;
 use Shell::Config::Generate 0.09;
+use String::Truncate qw( elide );
+use Sys::Hostname qw( hostname );
+use Path::Class qw( dir );
+use File::HomeDir;
+use Git::Wrapper;
 
 # ABSTRACT: Custom tcsh prompt for me
 # VERSION
@@ -100,10 +105,20 @@ sub generate_rc
   
   if($shell->is_c)
   {
-    say 'uncomplete *';
-    say 'unset autologout';
-    say 'unhash';
-    say 'nobeep';
+    say 'unset autologout;';
+    say 'set nobeep;';
+    say 'unhash;';
+    say 'uncomplete *;';
+    
+    my $dir = dir( File::HomeDir->my_home )->subdir('.nx');
+    $dir->mkpath(0,0700);
+    
+    my $csh = $dir->file('myprompt.csh');
+
+    my @cmd = ($^X, (map { '-I' . $_ } map { dir($_)->absolute } @INC), '-MNX::myprompt', '-E', "'NX::myprompt->main'");
+    $csh->spew("set prompt=\"`@cmd`\"\n");
+    
+    say "alias precmd source $csh";
   }
   
   0;
@@ -199,6 +214,46 @@ sub generate_rc_ed
 
 sub generate_prompt
 {
+  my $red     = "%{\033[1;31m%}";
+  my $green   = "%{\033[0;32m%}";
+  my $yellow  = "%{\033[1;33m%}";
+  my $blue    = "%{\033[1;34m%}";
+  my $magenta = "%{\033[1;35m%}";
+  my $cyan    = "%{\033[1;36m%}";
+  my $white   = "%{\033[0;37m%}";
+  my $end     = "%{\033[0m%}";
+  
+  my $hostname = hostname;
+  $hostname =~ s/\..*$//;
+  
+  my $char = $> ? '%' : '#';
+  
+  my $user = $ENV{USER} || 'unknown-user';
+
+  $user = $user =~ /^(ollisg|root)$/ ? '' : " \<$yellow$user$end\>";
+
+  my $dir = dir->absolute;
+  if("$dir" eq dir( File::HomeDir->my_home ))
+  {
+    $dir = '~';
+  }
+  else
+  {
+    $dir = $dir->basename;
+    $dir = '/' if $dir eq '';
+  }
+
+  $dir = elide $dir, 18;
+
+  my $git = Git::Wrapper->new(".");
+  my($branch) = eval { grep { s/^\* //; } $git->branch };
+  unless($@)
+  {
+    $branch =~ s/^\(detached from (.*)\)/$1/;
+    $dir .= " $cyan$branch";
+  }
+  print "$white$hostname$end$user \[$green$dir$end\]$char \n";
+
   0;
 }
 
